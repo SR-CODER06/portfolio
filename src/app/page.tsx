@@ -1,21 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import ProjectCard from "@/components/ProjectCard";
 import CustomCursor from "@/components/CustomCursor";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
+// Lazy load heavy components
+const ProjectCard = lazy(() => import("@/components/ProjectCard"));
+
 // Import ScrollTrigger
 if (typeof window !== "undefined") {
   // This is now handled in the useEffect to avoid SSR issues
 }
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center p-12">
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 export default function Home() {
   // Register GSAP ScrollTrigger plugin
@@ -25,6 +34,7 @@ export default function Home() {
       gsap.registerPlugin(ScrollTriggerInstance);
     }
   }, []);
+
   const [isMounted, setIsMounted] = useState(false);
   const { scrollYProgress } = useScroll();
   const progressOpacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
@@ -124,69 +134,85 @@ export default function Home() {
   useEffect(() => {
     setIsMounted(true);
 
-    // Initialize GSAP animations
+    // Initialize GSAP animations with optimized settings
     if (typeof window !== "undefined") {
-      // Skills section animation with enhanced effects
-      gsap.from(".skill-badge", {
-        scrollTrigger: {
-          trigger: "#skills-section",
-          start: "top 80%",
-          end: "bottom 60%",
-          toggleActions: "play none none reverse",
-        },
-        y: 50,
-        scale: 0.8,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.1,
-        ease: "back.out(1.7)",
-      });
+      // Batch animations for better performance
+      const batchAnimations = () => {
+        // Skills section animation with enhanced effects
+        gsap.from(".skill-badge", {
+          scrollTrigger: {
+            trigger: "#skills-section",
+            start: "top 80%",
+            end: "bottom 60%",
+            toggleActions: "play none none reverse",
+            markers: false, // Remove markers in production
+          },
+          y: 50,
+          scale: 0.8,
+          opacity: 0,
+          duration: 0.8,
+          stagger: 0.1,
+          ease: "back.out(1.7)",
+        });
 
-      // Experience timeline animation with enhanced effects
-      gsap.from(".experience-card", {
-        scrollTrigger: {
-          trigger: "#experience-section",
-          start: "top 70%",
-          end: "bottom 50%",
-          toggleActions: "play none none reverse",
-          scrub: 0.5, // Smooth scrubbing effect tied to scroll
-        },
-        x: -100,
-        y: 30,
-        opacity: 0,
-        scale: 0.9,
-        duration: 1,
-        stagger: 0.4,
-        ease: "power3.out",
-      });
+        // Experience timeline animation with enhanced effects
+        gsap.from(".experience-card", {
+          scrollTrigger: {
+            trigger: "#experience-section",
+            start: "top 70%",
+            end: "bottom 50%",
+            toggleActions: "play none none reverse",
+            scrub: 0.5, // Smooth scrubbing effect tied to scroll
+            markers: false, // Remove markers in production
+          },
+          x: -100,
+          y: 30,
+          opacity: 0,
+          scale: 0.9,
+          duration: 1,
+          stagger: 0.4,
+          ease: "power3.out",
+        });
 
-      // Timeline dots animation
-      gsap.from(".timeline-dot", {
-        scrollTrigger: {
-          trigger: "#experience-section",
-          start: "top 70%",
-          end: "bottom 50%",
-          toggleActions: "play none none reverse",
-        },
-        scale: 0,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.4,
-        ease: "back.out(2)",
-      });
+        // Timeline dots animation
+        gsap.from(".timeline-dot", {
+          scrollTrigger: {
+            trigger: "#experience-section",
+            start: "top 70%",
+            end: "bottom 50%",
+            toggleActions: "play none none reverse",
+            markers: false, // Remove markers in production
+          },
+          scale: 0,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.4,
+          ease: "back.out(2)",
+        });
 
-      // About section animation
-      gsap.from("#about-section .content", {
-        scrollTrigger: {
-          trigger: "#about-section",
-          start: "top 70%",
-          end: "bottom 50%",
-          toggleActions: "play none none reverse",
-        },
-        y: 50,
-        opacity: 0,
-        duration: 0.8,
-      });
+        // About section animation
+        gsap.from("#about-section .content", {
+          scrollTrigger: {
+            trigger: "#about-section",
+            start: "top 70%",
+            end: "bottom 50%",
+            toggleActions: "play none none reverse",
+            markers: false, // Remove markers in production
+          },
+          y: 50,
+          opacity: 0,
+          duration: 0.8,
+        });
+      };
+
+      // Use requestIdleCallback to run animations when browser is idle
+      if ("requestIdleCallback" in window) {
+        // @ts-ignore - TypeScript doesn't recognize requestIdleCallback
+        window.requestIdleCallback(batchAnimations, { timeout: 1000 });
+      } else {
+        // Fallback for browsers that don't support requestIdleCallback
+        setTimeout(batchAnimations, 200);
+      }
     }
   }, []);
 
@@ -267,6 +293,7 @@ export default function Home() {
                   src="https://images.unsplash.com/photo-1580927752452-89d86da3fa0a?w=800&q=80"
                   alt="Saswat Ranjan"
                   className="w-full h-auto object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
               </div>
@@ -451,6 +478,7 @@ export default function Home() {
                       src={`https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(" ", "")}/${skill.toLowerCase().replace(" ", "")}-original.svg`}
                       alt={skill}
                       className="w-10 h-10 mb-2"
+                      loading="lazy"
                       onError={(e) => {
                         // Fallback if original icon not found
                         e.currentTarget.src = `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(" ", "")}/${skill.toLowerCase().replace(" ", "")}-plain.svg`;
@@ -514,6 +542,7 @@ export default function Home() {
                       src={`https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(".js", "").replace(" ", "")}/${skill.toLowerCase().replace(".js", "").replace(" ", "")}-original.svg`}
                       alt={skill}
                       className="w-10 h-10 mb-2"
+                      loading="lazy"
                       onError={(e) => {
                         // Fallback if original icon not found
                         e.currentTarget.src = `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(".js", "").replace(" ", "")}/${skill.toLowerCase().replace(".js", "").replace(" ", "")}-plain.svg`;
@@ -568,6 +597,7 @@ export default function Home() {
                         src={`https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(" ", "")}/${skill.toLowerCase().replace(" ", "")}-original.svg`}
                         alt={skill}
                         className="w-10 h-10 mb-2"
+                        loading="lazy"
                         onError={(e) => {
                           // Fallback if original icon not found
                           e.currentTarget.src = `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${skill.toLowerCase().replace(" ", "")}/${skill.toLowerCase().replace(" ", "")}-plain.svg`;
@@ -694,7 +724,7 @@ export default function Home() {
                   ease: "easeInOut",
                   delay: 0.5,
                 }}
-                viewport={{ once: false, amount: 0.1 }}
+                viewport={{ once: true, amount: 0.1 }}
               />
             </motion.div>
 
@@ -707,9 +737,8 @@ export default function Home() {
                   duration: 0.7,
                   ease: "easeOut",
                   delay: index * 0.3,
-                  staggerChildren: 0.1,
                 }}
-                viewport={{ once: false, amount: 0.3 }}
+                viewport={{ once: true, amount: 0.3 }}
                 className={`experience-card mb-12 md:mb-0 md:w-1/2 ${index % 2 === 0 ? "md:pr-12 md:ml-0" : "md:pl-12 md:ml-auto"}`}
               >
                 <Card className="overflow-hidden border-primary/10 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-xl backdrop-blur-sm">
@@ -718,6 +747,7 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.1 }}
+                      viewport={{ once: true }}
                       className="flex items-center mb-4"
                     >
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
@@ -746,6 +776,7 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.2 }}
+                      viewport={{ once: true }}
                       className="mb-4"
                     >
                       <div className="flex items-center text-sm text-muted-foreground mb-1">
@@ -790,6 +821,7 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3 }}
+                      viewport={{ once: true }}
                       className="text-muted-foreground mb-4"
                     >
                       {exp.description}
@@ -799,6 +831,7 @@ export default function Home() {
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.4 }}
+                      viewport={{ once: true }}
                       className="flex flex-wrap gap-2"
                     >
                       {exp.skills.map((skill, skillIndex) => (
@@ -825,6 +858,7 @@ export default function Home() {
                     stiffness: 200,
                     damping: 10,
                   }}
+                  viewport={{ once: true }}
                   className="timeline-dot absolute left-0 md:left-1/2 transform -translate-x-1/2 w-5 h-5 rounded-full bg-primary border-4 border-background shadow-lg shadow-primary/20"
                 />
               </motion.div>
@@ -833,7 +867,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Projects Section */}
+      {/* Projects Section with lazy loading */}
       <section
         id="projects-section"
         className="py-20 px-4 md:px-8 lg:px-16 bg-muted/30 relative"
@@ -852,16 +886,17 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {portfolioData.projects.map((project, index) => (
-              <ProjectCard
-                key={index}
-                title={project.project_name}
-                description="A detailed project description would go here. This is a placeholder text to demonstrate the layout."
-                image={`https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80`}
-                technologies={["React", "Node.js", "MongoDB"]}
-                codeLink={project.code_link}
-                demoLink="#"
-                index={index}
-              />
+              <Suspense key={index} fallback={<LoadingFallback />}>
+                <ProjectCard
+                  title={project.project_name}
+                  description="A detailed project description would go here. This is a placeholder text to demonstrate the layout."
+                  image={`https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80`}
+                  technologies={["React", "Node.js", "MongoDB"]}
+                  codeLink={project.code_link}
+                  demoLink="#"
+                  index={index}
+                />
+              </Suspense>
             ))}
           </div>
         </div>

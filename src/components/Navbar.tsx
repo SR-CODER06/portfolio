@@ -116,19 +116,19 @@ const Navbar = () => {
         {/* Theme Toggle and Mobile Menu Button */}
         <div className="flex items-center gap-4">
           <motion.button
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={toggleTheme}
-            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors relative overflow-hidden"
             aria-label="Toggle theme"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={theme}
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 {mounted && theme === "dark" ? (
                   <Sun size={18} />
@@ -137,6 +137,16 @@ const Navbar = () => {
                 )}
               </motion.div>
             </AnimatePresence>
+            <motion.div
+              className="absolute inset-0 bg-primary/5"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: theme === "dark" ? 0 : 30,
+                opacity: theme === "dark" ? 0 : 0.5,
+              }}
+              transition={{ duration: 0.5 }}
+              style={{ borderRadius: "100%", transformOrigin: "center" }}
+            />
           </motion.button>
 
           {/* Mobile Menu Button */}
